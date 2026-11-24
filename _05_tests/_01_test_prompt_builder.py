@@ -1,4 +1,4 @@
-"""随机抽取五条房源，打印 Zero-shot Prompt，便于人工检查。"""
+"""随机抽取一条带有近地铁标签的房源，打印 Zero-shot Prompt。"""
 import sys
 from pathlib import Path
 
@@ -22,15 +22,18 @@ def preview_prompts():
         ignore_index=True,
     )
 
-    # 固定随机种子，方便重复检查同一批房源。
-    samples = data.sample(n=5, random_state=RANDOM_SEED)
+    # 仅筛选明确带有“近地铁”标签的房源。
+    mask = data["标签"].astype(str).map(
+        lambda tags: "近地铁" in {tag.strip() for tag in tags.split(",")}
+    )
+    candidates = data.loc[mask]
+    if candidates.empty:
+        raise ValueError("测试集中没有带近地铁标签的房源")
 
-    for i, (_, row) in enumerate(samples.iterrows(), start=1):
-        prompt = build_prompt(row["_city"], row, language="zh")
-        print(f"\n{'=' * 60}")
-        print(f"Prompt {i}/5 | 城市：{row['_city']}")
-        print("=" * 60)
-        print(prompt)
+    # 固定随机种子，抽取一条符合条件的房源。
+    row = candidates.sample(n=1, random_state=RANDOM_SEED).iloc[0]
+    prompt = build_prompt(row["_city"], row, language="zh")
+    print(prompt)
 
 
 if __name__ == "__main__":
