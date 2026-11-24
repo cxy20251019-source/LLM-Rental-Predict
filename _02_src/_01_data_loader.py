@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import CITIES, CITY_DIRS, DATA_PATH, SPLITS
+from _01_config import CITIES, CITY_DIRS, DATA_PATH, SPLITS
 
 ID_COLUMN = "房源编号"
 TARGET_COLUMN = "租金"
@@ -11,7 +11,7 @@ TARGET_COLUMN = "租金"
 
 def load_data(city: str, split: str, path: str | Path = DATA_PATH) -> pd.DataFrame:
     """读取一个城市的指定数据集，保留原有全部字段和行顺序。"""
-    # 同时支持 config.py 中的中文城市名和结果目录中的英文名。
+    # 同时支持 _01_config.py 中的中文城市名和结果目录中的英文名。
     city = {name: cn for cn, name in CITY_DIRS.items()}.get(city, city)
     if city not in CITIES:
         raise ValueError(f"未知城市：{city}，可选城市：{CITIES}")

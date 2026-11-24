@@ -2,9 +2,9 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-# 正式实验读取楼层规范后的数据；首次运行前执行 fix_data.py。
-DATA_PATH = ROOT / "data" / "三城数据_楼层规范.xlsx"
-RESULTS_DIR = ROOT / "results"
+# 正式实验读取楼层规范后的数据；首次运行前执行 _02_fix_data.py。
+DATA_PATH = ROOT / "_01_data" / "三城数据_楼层规范.xlsx"
+RESULTS_DIR = ROOT / "_04_results"
 
 CITIES = ("北京", "上海", "西安")
 CITY_DIRS = {"北京": "Beijing", "上海": "Shanghai", "西安": "Xian"}

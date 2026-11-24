@@ -5,8 +5,8 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parent
-SOURCE_PATH = ROOT / "data" / "三城数据_随机划分.xlsx"
-OUTPUT_PATH = ROOT / "data" / "三城数据_楼层规范.xlsx"
+SOURCE_PATH = ROOT / "_01_data" / "三城数据_随机划分.xlsx"
+OUTPUT_PATH = ROOT / "_01_data" / "三城数据_楼层规范.xlsx"
 FLOOR_CODES = {"地下室": 0, "低楼层": 1, "中楼层": 2, "高楼层": 3}
 
 
