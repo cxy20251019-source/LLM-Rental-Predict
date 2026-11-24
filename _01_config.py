@@ -18,3 +18,9 @@ MODELS = ()
 RANDOM_SEED = 42
 CONCURRENCY = 5
 MAX_RETRIES = 3
+
+# Prompt 原始字段白名单；增减字段时同步修改 format_property 模板。
+FEATURE_COLUMNS = (
+    "标题", "房屋类型", "标签", "租赁方式", "面积", "楼层",
+    "用电", "采暖", "朝向", "电梯", "配套设置",
+)
