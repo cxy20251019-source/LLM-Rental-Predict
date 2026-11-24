@@ -45,6 +45,7 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
     rental_type = {"整租": "entire-unit rental", "合租": "shared rental"}[data["租赁方式"]]
     heating = {"集中供暖": "central heating", "自采暖": "individual heating"}[data["采暖"]]
     electricity = {"民电": "residential electricity"}[data["用电"]]
+    water = {"民水": "residential water supply", "商水": "commercial water supply"}.get(data["用水"], "not specified")
     orientation = ", ".join(DIRECTIONS[item] for item in data["朝向"].split())
     elevator = {"有": "has an elevator", "无": "has no elevator"}[data["电梯"]]
     decoration = "well-decorated" if "精装" in tags else "not specified"
@@ -61,10 +62,10 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
             f"房源所在小区：{community_zh}。"
             f"房屋标注面积为{area.group(1)}平方米，位于一栋{floor.group(2)}层建筑的{floor.group(1)}。"
             f"租赁方式为{data['租赁方式']}，户型为{layout_zh}。"
-            f"装修情况：{decoration_zh}。用电类型为{data['用电']}，采暖方式为{data['采暖']}。"
+            f"装修情况：{decoration_zh}。用电类型为{data['用电']}，用水类型为{data['用水']}，采暖方式为{data['采暖']}。"
             f"朝向为{'、'.join(data['朝向'].split())}，电梯：{data['电梯']}。"
-            f"{'地铁情况：近地铁。' if '近地铁' in tags else ''}"
-            f"已标注配套设施：{listed_zh or '未列出所跟踪的设施'}。"
+            f"地铁情况：{'近地铁' if '近地铁' in tags else '暂不清楚'}。"
+            f"{'已标注配套设施：' + listed_zh + '。' if listed_zh else ''}"
         )
 
     return (
@@ -72,10 +73,10 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
         f"The listed area is {area.group(1)} square meters. "
         f"It is on a {FLOORS[floor.group(1)]} of a {floor.group(2)}-floor building. "
         f"The rental type is {rental_type}, with a layout of {layout_text}. "
-        f"Decoration: {decoration}. It has {electricity} and {heating}. "
+        f"Decoration: {decoration}. Electricity: {electricity}. Water supply: {water}. Heating: {heating}. "
         f"The orientation is {orientation}, and the building {elevator}. "
-        f"{'Subway proximity: near a subway station. ' if '近地铁' in tags else ''}"
-        f"Listed amenities: {', '.join(listed) if listed else 'none of the tracked amenities listed'}."
+        f"Subway proximity: {'near a subway station' if '近地铁' in tags else 'unknown'}. "
+        f"{'Listed amenities: ' + ', '.join(listed) + '.' if listed else ''}"
     )
 
 
