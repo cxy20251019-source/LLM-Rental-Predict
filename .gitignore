@@ -12,6 +12,7 @@ venv/
 .DS_Store
 /data/*
 !/data/README.md
+!/data/三城数据_随机划分.xlsx
 /results/**/*.xlsx
 /results/**/*.jsonl
 /results/**/*.log
