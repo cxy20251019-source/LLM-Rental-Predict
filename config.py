@@ -2,7 +2,8 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DATA_PATH = ROOT / "data" / "三城数据_随机划分.xlsx"
+# 正式实验读取楼层规范后的数据；首次运行前执行 fix_data.py。
+DATA_PATH = ROOT / "data" / "三城数据_楼层规范.xlsx"
 RESULTS_DIR = ROOT / "results"
 
 CITIES = ("北京", "上海", "西安")
