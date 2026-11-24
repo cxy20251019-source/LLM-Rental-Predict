@@ -13,8 +13,18 @@ DATASET = "test"
 SHOTS = (0, 1, 5, 10, 20)
 STRATEGIES = ("random", "similarity")
 
-# 以下为待确认的实验设置；空模型列表防止意外发起付费请求。
-MODELS = ()
+# 模型配置：每个模型独立填写；同一供应商可复用环境变量。
+# 下方仅为格式示例，确定供应商和模型后再取消注释并填写真实 model ID。
+MODELS = (
+    # {
+    #     "name": "模型显示名",         # 结果 Excel 中的列名
+    #     "model": "实际模型ID",        # API 请求使用的模型名
+    #     "api_key_env": "LLM_API_KEY",
+    #     "base_url_env": "LLM_BASE_URL",
+    #     "request_options": {},      # 按模型能力配置 temperature 等参数
+    # },
+)
+LLM_TIMEOUT = 60.0  # 单次 API 请求超时（秒）
 RANDOM_SEED = 42
 CONCURRENCY = 5
 MAX_RETRIES = 3

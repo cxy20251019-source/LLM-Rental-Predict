@@ -3,4 +3,4 @@ openpyxl
 numpy
 matplotlib
 python-dotenv
-# 模型 SDK 待确定供应商后添加。
+openai>=1.0
