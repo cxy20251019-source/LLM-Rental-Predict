@@ -1,4 +1,4 @@
-"""实验参数集中配置；模型及 API 参数尚待确定。"""
+"""实验参数集中配置；模型已配置，正式推理参数尚待确定。"""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -13,16 +13,45 @@ DATASET = "test"
 SHOTS = (0, 1, 5, 10, 20)
 STRATEGIES = ("random", "similarity")
 
-# 模型配置：每个模型独立填写；同一供应商可复用环境变量。
-# 下方仅为格式示例，确定供应商和模型后再取消注释并填写真实 model ID。
+# 五个模型家族的官方 OpenAI-compatible API 配置。
+# 每个模型可单独设置推理参数；暂时保留各厂商默认值，正式实验前统一确认。
+# 配置本身不发送请求；本地 .env 中填写密钥和接口地址。
 MODELS = (
-    # {
-    #     "name": "模型显示名",         # 结果 Excel 中的列名
-    #     "model": "实际模型ID",        # API 请求使用的模型名
-    #     "api_key_env": "LLM_API_KEY",
-    #     "base_url_env": "LLM_BASE_URL",
-    #     "request_options": {},      # 按模型能力配置 temperature 等参数
-    # },
+    {
+        "name": "GPT-5.6-Sol",
+        "model": "gpt-5.6-sol",
+        "api_key_env": "OPENAI_API_KEY",
+        "base_url_env": "OPENAI_BASE_URL",
+        "request_options": {},
+    },
+    {
+        "name": "GLM-5.3-Flash",
+        "model": "glm-5.3-flash",
+        "api_key_env": "GLM_API_KEY",
+        "base_url_env": "GLM_BASE_URL",
+        "request_options": {},
+    },
+    {
+        "name": "DeepSeek-V4.1-Flash-1017",
+        "model": "deepseek-flash",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "base_url_env": "DEEPSEEK_BASE_URL",
+        "request_options": {},
+    },
+    {
+        "name": "Qwen3.8-Flash",
+        "model": "qwen3.8-flash",
+        "api_key_env": "QWEN_API_KEY",
+        "base_url_env": "QWEN_BASE_URL",
+        "request_options": {},
+    },
+    {
+        "name": "Hy4-Flash",
+        "model": "hy4-flash",
+        "api_key_env": "HUNYUAN_API_KEY",
+        "base_url_env": "HUNYUAN_BASE_URL",
+        "request_options": {},
+    },
 )
 LLM_TIMEOUT = 60.0  # 单次 API 请求超时（秒）
 RANDOM_SEED = 42
