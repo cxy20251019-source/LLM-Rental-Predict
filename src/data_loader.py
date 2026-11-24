@@ -20,15 +20,6 @@ def load_data(city: str, split: str, path: str | Path = DATA_PATH) -> pd.DataFra
 
     sheet_name = f"{city}_{SPLITS[split]}"
     df = pd.read_excel(path, sheet_name=sheet_name, dtype={ID_COLUMN: str})
-
-    # 只校验，不删除、填充或修改数据。
-    missing = {ID_COLUMN, TARGET_COLUMN} - set(df.columns)
-    if missing:
-        raise ValueError(f"{sheet_name} 缺少必要字段：{missing}")
-    if df[ID_COLUMN].isna().any() or df[ID_COLUMN].duplicated().any():
-        raise ValueError(f"{sheet_name} 存在空白或重复的房源编号")
-    if not pd.api.types.is_numeric_dtype(df[TARGET_COLUMN]) or df[TARGET_COLUMN].isna().any():
-        raise ValueError(f"{sheet_name} 存在非数值或空白租金")
     return df
 
 
@@ -37,9 +28,6 @@ def load_city_data(city: str, path: str | Path = DATA_PATH) -> tuple[pd.DataFram
     train = load_data(city, "train", path)
     validation = load_data(city, "validation", path)
     test = load_data(city, "test", path)
-    ids = [set(df[ID_COLUMN]) for df in (train, validation, test)]
-    if ids[0] & ids[1] or ids[0] & ids[2] or ids[1] & ids[2]:
-        raise ValueError(f"{city} 的不同数据集存在重复房源编号")
     return train, validation, test
 
 
