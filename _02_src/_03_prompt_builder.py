@@ -48,8 +48,6 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
     orientation = ", ".join(DIRECTIONS[item] for item in data["朝向"].split())
     elevator = {"有": "has an elevator", "无": "has no elevator"}[data["电梯"]]
     decoration = "well-decorated" if "精装" in tags else "not specified"
-    subway = "near a subway station" if "近地铁" in tags else "not specified"
-    balcony = "private balcony indicated" if "独立阳台" in tags else "not specified"
 
     if language == "zh":
         community_zh = match.group(1) if match else "未注明"
@@ -59,15 +57,13 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
             layout_zh = f"{shared_layout.group(1)}居室，客厅和卫生间数量未注明"
         listed_zh = "、".join(name for name in FACILITIES if name in amenities)
         decoration_zh = "精装修" if "精装" in tags else "未注明"
-        subway_zh = "近地铁" if "近地铁" in tags else "未注明"
-        balcony_zh = "独立阳台" if "独立阳台" in tags else "未注明"
         return (
             f"房源所在小区：{community_zh}。"
             f"房屋标注面积为{area.group(1)}平方米，位于一栋{floor.group(2)}层建筑的{floor.group(1)}。"
             f"租赁方式为{data['租赁方式']}，户型为{layout_zh}。"
             f"装修情况：{decoration_zh}。用电类型为{data['用电']}，采暖方式为{data['采暖']}。"
             f"朝向为{'、'.join(data['朝向'].split())}，电梯：{data['电梯']}。"
-            f"地铁情况：{subway_zh}。阳台情况：{balcony_zh}。"
+            f"{'地铁情况：近地铁。' if '近地铁' in tags else ''}"
             f"已标注配套设施：{listed_zh or '未列出所跟踪的设施'}。"
         )
 
@@ -78,7 +74,7 @@ def format_property(row: Mapping, language: str = PROMPT_LANGUAGE) -> str:
         f"The rental type is {rental_type}, with a layout of {layout_text}. "
         f"Decoration: {decoration}. It has {electricity} and {heating}. "
         f"The orientation is {orientation}, and the building {elevator}. "
-        f"Subway proximity: {subway}. Balcony: {balcony}. "
+        f"{'Subway proximity: near a subway station. ' if '近地铁' in tags else ''}"
         f"Listed amenities: {', '.join(listed) if listed else 'none of the tracked amenities listed'}."
     )
 
