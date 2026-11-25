@@ -53,7 +53,7 @@ class ResultWriter:
     """一个结果文件只由一个实例负责写入；不在多个进程中并发保存。"""
 
     def __init__(self, city, data: pd.DataFrame, shots=0, strategy=None,
-                 split="test", results_dir=RESULTS_DIR):
+                 split="test", results_dir=RESULTS_DIR, *, test_layout=False):
         self.path = result_path(city, shots, strategy, split, results_dir, test_layout=test_layout)
         self.model_names = tuple(model["name"] for model in MODELS)
         self.headers = (ID_COLUMN, TRUE_RENT_COLUMN, *self.model_names)
