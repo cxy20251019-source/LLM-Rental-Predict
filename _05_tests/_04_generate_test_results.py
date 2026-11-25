@@ -33,7 +33,7 @@ async def generate_test_results():
         row["房源编号"]: build_prompt("北京", row.loc[list(FEATURE_COLUMNS)], language="zh")
         for _, row in data.iterrows()
     }
-    writer = ResultWriter("北京", data, shots=0, results_dir=TEST_RESULTS_DIR, test_layout=True)
+    writer = ResultWriter("北京", data, shots=0, results_dir=TEST_RESULTS_DIR, test_layout=True, prompts=prompts)
     pending = writer.pending_ids(name)
     print(f"DeepSeek: 已保存 {len(data) - len(pending)}/50，待预测 {len(pending)} 条")
     print(f"结果文件：{writer.path}")

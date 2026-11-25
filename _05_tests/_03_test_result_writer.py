@@ -59,6 +59,34 @@ class TestResultWriter(unittest.TestCase):
         resumed = self.writer(test_layout=True)
         self.assertEqual(resumed.pending_ids(self.model), ["002", "003"])
 
+    def test_prompts_and_existing_result_migration(self):
+        prompts = {"001": "提示词一\n房源描述", "002": "提示词二", "003": "提示词三"}
+        writer = self.writer(test_layout=True)
+        writer.write_prediction("001", self.model, 2600)
+        writer.workbook.close()
+        migrated = self.writer(test_layout=True, prompts=prompts)
+        self.assertEqual(migrated.pending_ids(self.model), ["002", "003"])
+        self.assertEqual(migrated.headers[-1], "提示词")
+        self.assertEqual(migrated.sheet.cell(2, len(migrated.headers)).value, prompts["001"])
+        self.assertIsNotNone(migrated.sheet.cell(2, len(migrated.headers)).comment)
+        migrated.workbook.close()
+        resumed = self.writer(test_layout=True, prompts=prompts)
+        self.assertEqual(resumed.pending_ids(self.model), ["002", "003"])
+        resumed.workbook.close()
+        with self.assertRaises(ValueError):
+            self.writer(test_layout=True, prompts={**prompts, "001": "修改后的提示词"})
+
+    def test_new_prompt_table(self):
+        prompts = {"001": "提示词一", "002": "提示词二", "003": "提示词三"}
+        writer = self.writer(test_layout=True, prompts=prompts)
+        writer.write_prediction("003", self.model, 4500)
+        with load_workbook_context(writer.path) as sheet:
+            rows = list(sheet.values)
+        self.assertEqual(rows[0][-1], "提示词")
+        self.assertEqual([row[-1] for row in rows[1:]], list(prompts.values()))
+        self.assertEqual(rows[3][rows[0].index(self.model)], 4500)
+        writer.workbook.close()
+
     def test_write_and_resume(self):
         writer = self.writer()
         self.assertEqual(writer.pending_ids(self.model), ["001", "002", "003"])
