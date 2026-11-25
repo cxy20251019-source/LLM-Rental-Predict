@@ -1,4 +1,4 @@
-"""50 条真实北京验证集房源的 DeepSeek Zero-shot 联调（会产生 API 费用）。"""
+"""50 条完全虚构房源的 DeepSeek Zero-shot 联调（会产生 API 费用）。"""
 import asyncio
 import sys
 from pathlib import Path
@@ -14,14 +14,16 @@ from _02_src._04_llm_client import create_client, predict_rent
 from _02_src._05_result_writer import ResultWriter
 
 CSV_PATH = ROOT / "_01_data" / "test_data_50.csv"
-TEST_RESULTS_DIR = Path(__file__).resolve().parent / "test_result"
+TEST_RESULTS_DIR = Path(__file__).resolve().parent / "test_result" / "synthetic"
 
 
 async def generate_test_results():
     """仅调用 DeepSeek，成功一条就写入 Excel，失败留空，下次可续跑。"""
-    data = pd.read_csv(CSV_PATH, encoding="utf-8-sig", dtype={"房源编号": str})
-    if len(data) != 50:
-        raise ValueError("测试 CSV 必须包含 50 条房源")
+    data = pd.read_csv(CSV_PATH, encoding="utf-8-sig", dtype={"房源编号": str}, keep_default_na=False)
+    if len(data) != 50 or not data["房源编号"].str.fullmatch(r"SYNTHETIC-\d{3}").all():
+        raise ValueError("联调仅允许 50 条虚构房源（SYNTHETIC 编号）")
+    if not data["标题"].str.contains("虚构测试小区", regex=False).all():
+        raise ValueError("联调 CSV 必须使用虚构小区")
 
     model = next(m for m in MODELS if m["api_key_env"] == "DEEPSEEK_API_KEY")
     name = model["name"]
