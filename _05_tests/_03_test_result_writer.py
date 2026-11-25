@@ -126,11 +126,33 @@ class TestResultWriter(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.writer(self.data.iloc[:2])
 
+    def test_retry_save_only(self):
+        writer = self.writer()
+        import os
+        real_replace = os.replace
+        def fail_once(source, destination):
+            if replace.call_count == 1:
+                raise PermissionError("locked")
+            real_replace(source, destination)
+
+        with patch("_02_src._05_result_writer.os.replace", side_effect=fail_once) as replace, \
+             patch("_02_src._05_result_writer.time.sleep") as sleep:
+            writer.write_prediction("001", self.model, 2600)
+            self.assertEqual(replace.call_count, 2)
+            sleep.assert_called_once()
+        self.assertNotIn("001", self.writer().pending_ids(self.model))
+
     def test_atomic_save_failure(self):
         writer = self.writer()
-        with patch("_02_src._05_result_writer.os.replace", side_effect=PermissionError):
+        with patch("_02_src._05_result_writer.os.replace", side_effect=PermissionError) as replace, \
+             patch("_02_src._05_result_writer.time.sleep"):
             with self.assertRaises(PermissionError):
                 writer.write_prediction("001", self.model, 2600)
+            self.assertEqual(replace.call_count, 4)
+        recovery = [p for p in writer.path.parent.glob("*.xlsx") if p != writer.path]
+        self.assertEqual(len(recovery), 1)
+        with load_workbook_context(recovery[0]) as sheet:
+            self.assertEqual(sheet.cell(2, writer.headers.index(self.model) + 1).value, 2600)
         self.assertIn("001", self.writer().pending_ids(self.model))
         writer.save()
         self.assertNotIn("001", self.writer().pending_ids(self.model))

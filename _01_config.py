@@ -56,7 +56,10 @@ MODELS = (
 LLM_TIMEOUT = 60.0  # 单次 API 请求超时（秒）
 RANDOM_SEED = 42
 CONCURRENCY = 5
-MAX_RETRIES = 3
+MAX_RETRIES = 3  # API 首次请求失败后的额外重试次数
+RETRY_BASE_DELAY = 2.0  # API 指数退避：2、4、8 秒
+SAVE_MAX_RETRIES = 3  # Excel 被占用时的额外保存重试次数
+SAVE_RETRY_DELAY = 5.0  # 每次保存重试间隔（秒）
 
 # Prompt 原始字段白名单；增减字段时同步修改 format_property 模板。
 FEATURE_COLUMNS = (

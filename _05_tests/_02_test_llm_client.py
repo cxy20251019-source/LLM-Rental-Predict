@@ -3,12 +3,15 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
+
+import httpx
+from openai import APIConnectionError, APIStatusError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from _01_config import MODELS
-from _02_src._04_llm_client import parse_rent, predict_rent
+from _02_src._04_llm_client import parse_rent, predict_rent, predict_rent_with_retry
 
 
 class TestLLMClient(unittest.IsolatedAsyncioTestCase):
@@ -54,6 +57,37 @@ class TestLLMClient(unittest.IsolatedAsyncioTestCase):
                     messages=[{"role": "user", "content": "测试提示词"}],
                     **model["request_options"],
                 )
+
+    async def test_retry_connection_error(self):
+        error = APIConnectionError(request=httpx.Request("POST", "https://example.invalid"))
+        with patch("_02_src._04_llm_client.predict_rent", new_callable=AsyncMock) as call, \
+             patch("_02_src._04_llm_client.asyncio.sleep", new_callable=AsyncMock) as sleep:
+            call.side_effect = [error, error, 3500.0]
+            self.assertEqual(await predict_rent_with_retry(None, {}, "test"), 3500.0)
+            self.assertEqual(call.await_count, 3)
+            self.assertEqual([args.args[0] for args in sleep.await_args_list], [2.0, 4.0])
+
+    async def test_retry_exhausted(self):
+        error = APIConnectionError(request=httpx.Request("POST", "https://example.invalid"))
+        with patch("_02_src._04_llm_client.predict_rent", new_callable=AsyncMock) as call, \
+             patch("_02_src._04_llm_client.asyncio.sleep", new_callable=AsyncMock) as sleep:
+            call.side_effect = error
+            with self.assertRaises(APIConnectionError):
+                await predict_rent_with_retry(None, {}, "test", max_retries=3)
+            self.assertEqual(call.await_count, 4)
+            self.assertEqual([args.args[0] for args in sleep.await_args_list], [2.0, 4.0, 8.0])
+
+    async def test_no_retry_auth_or_invalid_output(self):
+        request = httpx.Request("POST", "https://example.invalid")
+        error = APIStatusError("unauthorized", response=httpx.Response(401, request=request), body=None)
+        for failure in (error, ValueError("输出不是数字")):
+            with patch("_02_src._04_llm_client.predict_rent", new_callable=AsyncMock) as call, \
+                 patch("_02_src._04_llm_client.asyncio.sleep", new_callable=AsyncMock) as sleep:
+                call.side_effect = failure
+                with self.assertRaises(type(failure)):
+                    await predict_rent_with_retry(None, {}, "test")
+                self.assertEqual(call.await_count, 1)
+                sleep.assert_not_awaited()
 
     async def test_truncated_response(self):
         create = AsyncMock(return_value=SimpleNamespace(choices=[

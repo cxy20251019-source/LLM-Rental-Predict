@@ -6,11 +6,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pandas as pd
-from openai import APIError, APIStatusError
+from openai import APIConnectionError, APIError, APIStatusError
 
 from _01_config import ROOT, MODELS, FEATURE_COLUMNS
 from _02_src._03_prompt_builder import build_prompt
-from _02_src._04_llm_client import create_client, predict_rent
+from _02_src._04_llm_client import create_client, predict_rent_with_retry
 from _02_src._05_result_writer import ResultWriter
 
 CSV_PATH = ROOT / "_01_data" / "test_data_50.csv"
@@ -35,6 +35,7 @@ async def generate_test_results():
     }
     writer = ResultWriter("北京", data, shots=0, results_dir=TEST_RESULTS_DIR, test_layout=True, prompts=prompts)
     pending = writer.pending_ids(name)
+    saved_count = len(data) - len(pending)
     print(f"DeepSeek: 已保存 {len(data) - len(pending)}/50，待预测 {len(pending)} 条")
     print(f"结果文件：{writer.path}")
 
@@ -42,16 +43,19 @@ async def generate_test_results():
         if not pending:
             return writer.path
 
-        # 每条独立请求；先采用串行联调，不自动重试，避免额外费用。
+        # 每条独立请求，串行联调；临时 API 异常使用统一重试机制。
         async with create_client(model) as client:
             for index, house_id in enumerate(pending, 1):
                 try:
-                    rent = await predict_rent(client, model, prompts[house_id])
+                    rent = await predict_rent_with_retry(client, model, prompts[house_id])
                 except APIStatusError as exc:
                     print(f"[{index}/{len(pending)}] {house_id} 请求失败：HTTP {exc.status_code}")
-                    # 配置、权限、余额或限流问题：停止，修复后可续跑。
+                    # 配置、权限、余额问题或持续限流：停止，修复后可续跑。
                     if exc.status_code in (400, 401, 402, 403, 404, 429):
                         break
+                    continue
+                except APIConnectionError as exc:
+                    print(f"[{index}/{len(pending)}] {house_id} 连接重试耗尽：{type(exc).__name__}；留空并继续下一条")
                     continue
                 except APIError as exc:
                     print(f"[{index}/{len(pending)}] {house_id} 请求失败：{type(exc).__name__}；停止以便排查")
@@ -61,9 +65,10 @@ async def generate_test_results():
                     continue
 
                 writer.write_prediction(house_id, name, rent)
+                saved_count += 1
                 print(f"[{index}/{len(pending)}] {house_id} 预测租金：{rent:g} 元/月")
     finally:
-        print(f"本次结束：已保存 {50 - len(writer.pending_ids(name))}/50 条，未完成保持空白。")
+        print(f"本次结束：已保存 {saved_count}/50 条，以成功写入原结果表为准。")
         writer.workbook.close()
 
     return writer.path

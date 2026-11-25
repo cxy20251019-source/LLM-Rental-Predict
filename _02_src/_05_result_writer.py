@@ -1,6 +1,7 @@
 """按城市、策略和 shots 保存预测 Excel，支持单写入者与断点续跑。"""
 import math
 import os
+import time
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -9,7 +10,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.comments import Comment
 from openpyxl.styles import Alignment
 
-from _01_config import CITY_DIRS, MODELS, RESULTS_DIR, SHOTS, STRATEGIES
+from _01_config import CITY_DIRS, MODELS, RESULTS_DIR, SHOTS, STRATEGIES, SAVE_MAX_RETRIES, SAVE_RETRY_DELAY
 from _02_src._01_data_loader import ID_COLUMN, TARGET_COLUMN
 
 TRUE_RENT_COLUMN = "真实租金"
@@ -183,9 +184,28 @@ class ResultWriter:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with NamedTemporaryFile(dir=self.path.parent, suffix=".xlsx", delete=False) as tmp:
             temp_path = Path(tmp.name)
+        keep_recovery = False
         try:
             self.workbook.save(temp_path)
-            os.replace(temp_path, self.path)
-            self._dirty = False
+            for attempt in range(SAVE_MAX_RETRIES + 1):
+                try:
+                    os.replace(temp_path, self.path)
+                    self._dirty = False
+                    return
+                except PermissionError as exc:
+                    if attempt == SAVE_MAX_RETRIES:
+                        # 临时表已完整写入：保留它，避免丢掉已付费的预测结果。
+                        keep_recovery = True
+                        raise PermissionError(
+                            f"结果表仍被占用。旧文件未改变；最新完整表已保存在 {temp_path}。"
+                            "请关闭 Excel/WPS/PyCharm 表格预览，核对后用该表替换原结果表，再续跑。"
+                        ) from exc
+                    print(
+                        f"结果表暂时无法替换，请关闭 Excel/WPS 或表格预览。"
+                        f"{SAVE_RETRY_DELAY:g} 秒后重试保存（{attempt + 1}/{SAVE_MAX_RETRIES}）",
+                        flush=True,
+                    )
+                    time.sleep(SAVE_RETRY_DELAY)
         finally:
-            temp_path.unlink(missing_ok=True)
+            if not keep_recovery:
+                temp_path.unlink(missing_ok=True)
