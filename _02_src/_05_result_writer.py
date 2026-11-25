@@ -13,7 +13,7 @@ from _02_src._01_data_loader import ID_COLUMN, TARGET_COLUMN
 TRUE_RENT_COLUMN = "真实租金"
 
 
-def result_path(city, shots=0, strategy=None, split="test", results_dir=RESULTS_DIR):
+def result_path(city, shots=0, strategy=None, split="test", results_dir=RESULTS_DIR, *, test_layout=False):
     """同一个城市、数据集、策略和 shots 对应唯一结果文件。"""
     city = CITY_DIRS.get(city, city)
     if city not in CITY_DIRS.values():
@@ -22,13 +22,17 @@ def result_path(city, shots=0, strategy=None, split="test", results_dir=RESULTS_
         raise ValueError("只支持测试集和验证集结果")
     if shots not in SHOTS:
         raise ValueError(f"不支持的 shots：{shots}")
-    folder = Path(results_dir) / ("predictions" if split == "test" else "validation") / city
+    if test_layout and split != "test":
+        raise ValueError("简化联调目录仅用于 test 数据集")
+    folder = Path(results_dir) / city if test_layout else Path(results_dir) / ("predictions" if split == "test" else "validation") / city
     if shots == 0:
         if strategy is not None:
             raise ValueError("Zero-shot 不需要样本选择策略")
     else:
         if strategy not in STRATEGIES:
             raise ValueError("Few-shot 必须指定 random 或 similarity")
+        if test_layout:
+            return folder / f"{strategy}_{shots}_shot.xlsx"
         folder /= strategy
     return folder / f"{shots}_shot.xlsx"
 
@@ -50,7 +54,7 @@ class ResultWriter:
 
     def __init__(self, city, data: pd.DataFrame, shots=0, strategy=None,
                  split="test", results_dir=RESULTS_DIR):
-        self.path = result_path(city, shots, strategy, split, results_dir)
+        self.path = result_path(city, shots, strategy, split, results_dir, test_layout=test_layout)
         self.model_names = tuple(model["name"] for model in MODELS)
         self.headers = (ID_COLUMN, TRUE_RENT_COLUMN, *self.model_names)
         if not self.model_names or len(set(self.headers)) != len(self.headers):

@@ -46,6 +46,19 @@ class TestResultWriter(unittest.TestCase):
         with self.assertRaises(ValueError):
             result_path("北京", 5)
 
+    def test_flat_test_layout(self):
+        self.assertEqual(result_path("北京", results_dir=self.root, test_layout=True),
+                         self.root / "Beijing/0_shot.xlsx")
+        self.assertEqual(result_path("北京", 5, "random", results_dir=self.root, test_layout=True),
+                         self.root / "Beijing/random_5_shot.xlsx")
+        self.assertEqual(result_path("北京", 5, "similarity", results_dir=self.root, test_layout=True),
+                         self.root / "Beijing/similarity_5_shot.xlsx")
+        writer = self.writer(test_layout=True)
+        self.assertEqual(writer.path, self.root / "Beijing/0_shot.xlsx")
+        writer.write_prediction("001", self.model, 2600)
+        resumed = self.writer(test_layout=True)
+        self.assertEqual(resumed.pending_ids(self.model), ["002", "003"])
+
     def test_write_and_resume(self):
         writer = self.writer()
         self.assertEqual(writer.pending_ids(self.model), ["001", "002", "003"])

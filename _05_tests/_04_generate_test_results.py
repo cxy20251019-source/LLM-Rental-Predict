@@ -14,7 +14,7 @@ from _02_src._04_llm_client import create_client, predict_rent
 from _02_src._05_result_writer import ResultWriter
 
 CSV_PATH = ROOT / "_01_data" / "test_data_50.csv"
-TEST_RESULTS_DIR = Path(__file__).resolve().parent / "test_result" / "synthetic"
+TEST_RESULTS_DIR = Path(__file__).resolve().parent / "test_result"
 
 
 async def generate_test_results():
@@ -33,7 +33,7 @@ async def generate_test_results():
         row["房源编号"]: build_prompt("北京", row.loc[list(FEATURE_COLUMNS)], language="zh")
         for _, row in data.iterrows()
     }
-    writer = ResultWriter("北京", data, shots=0, results_dir=TEST_RESULTS_DIR)
+    writer = ResultWriter("北京", data, shots=0, results_dir=TEST_RESULTS_DIR, test_layout=True)
     pending = writer.pending_ids(name)
     print(f"DeepSeek: 已保存 {len(data) - len(pending)}/50，待预测 {len(pending)} 条")
     print(f"结果文件：{writer.path}")
